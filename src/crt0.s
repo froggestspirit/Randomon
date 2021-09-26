@@ -52,7 +52,7 @@ GPIOPortReadEnable: @ 80000C8
 	.4byte gMoveNames
 	.4byte gDecorations
 
-	.4byte 0x00001270 @ offsetof(struct SaveBlock1, flags) 
+	.4byte 0x00001270 @ offsetof(struct SaveBlock1, flags)
 	.4byte 0x0000139c @ offsetof(struct SaveBlock1, vars)
 	.4byte 0x00000018 @ offsetof(struct SaveBlock2, pokedex)
 	.4byte 0x00000988 @ offsetof(struct SaveBlock1, seen1)
@@ -191,13 +191,6 @@ IntrMain: @ 8000248
 IntrMain_FoundIntr:
 	strh r0, [r3, #OFFSET_REG_IF - 0x200]
 	bic r2, r2, r0
-	ldr r0, =gSTWIStatus
-	ldr r0, [r0]
-	ldrb r0, [r0, 0xA]
-	mov r1, 0x8
-	lsl r0, r1, r0
-	orr r0, r0, #INTR_FLAG_GAMEPAK
-	orr r1, r0, #INTR_FLAG_SERIAL | INTR_FLAG_TIMER3 | INTR_FLAG_VCOUNT | INTR_FLAG_HBLANK
 	and r1, r1, r2
 	strh r1, [r3, #OFFSET_REG_IE - 0x200]
 	mrs r3, cpsr

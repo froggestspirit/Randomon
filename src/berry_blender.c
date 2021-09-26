@@ -17,7 +17,6 @@
 #include "event_data.h"
 #include "main.h"
 #include "link.h"
-#include "link_rfu.h"
 #include "item_menu_icons.h"
 #include "berry.h"
 #include "item.h"
@@ -402,17 +401,17 @@ static const struct WindowTemplate sYesNoWindowTemplate_ContinuePlaying =
 
 static const s8 sPlayerArrowQuadrant[BLENDER_MAX_PLAYERS][2] =
 {
-    {-1, -1}, 
-    { 1, -1}, 
-    {-1,  1}, 
+    {-1, -1},
+    { 1, -1},
+    {-1,  1},
     { 1,  1}
 };
 
 static const u8 sPlayerArrowPos[BLENDER_MAX_PLAYERS][2] =
 {
-    { 72,  32}, 
-    {168,  32}, 
-    { 72, 128}, 
+    { 72,  32},
+    {168,  32},
+    { 72, 128},
     {168, 128}
 };
 
@@ -427,16 +426,16 @@ static const u8 sPlayerIdMap[BLENDER_MAX_PLAYERS - 1][BLENDER_MAX_PLAYERS] =
 // Blender arrow positions:
 //
 //           0x0000 (limit 0x10000)
-//            .  .  
+//            .  .
 //         .        .
 // 0x4000 .          . 0xC000
 //        .          .
 //         .        .
-//            .  .  
+//            .  .
 //           0x8000
-//   
+//
 static const u16 sArrowStartPos[] = {
-    0, 
+    0,
     MAX_ARROW_POS / 4 * 3, // 0xC000
     MAX_ARROW_POS / 4,     // 0x4000
     MAX_ARROW_POS / 4 * 2  // 0x8000
@@ -446,8 +445,8 @@ static const u8 sArrowHitRangeStart[BLENDER_MAX_PLAYERS] = {32, 224, 96, 160};
 
 static const TaskFunc sLocalOpponentTasks[] =
 {
-    Task_HandleOpponent1, 
-    Task_HandleOpponent2, 
+    Task_HandleOpponent1,
+    Task_HandleOpponent2,
     Task_HandleOpponent3
 };
 
@@ -873,7 +872,7 @@ static const u8 sOpponentBerrySets[NUM_NPC_BERRIES * 2][3] =
     {ITEM_TO_BERRY(ITEM_CHESTO_BERRY) - 1, ITEM_TO_BERRY(ITEM_CHERI_BERRY) - 1,  ITEM_TO_BERRY(ITEM_ASPEAR_BERRY) - 1},  // player chose Pecha Berry
     {ITEM_TO_BERRY(ITEM_PECHA_BERRY) - 1,  ITEM_TO_BERRY(ITEM_CHESTO_BERRY) - 1, ITEM_TO_BERRY(ITEM_CHERI_BERRY) - 1},   // player chose Rawst Berry
     {ITEM_TO_BERRY(ITEM_RAWST_BERRY) - 1,  ITEM_TO_BERRY(ITEM_PECHA_BERRY) - 1,  ITEM_TO_BERRY(ITEM_CHESTO_BERRY) - 1},  // player chose Aspear Berry
-    
+
     // These sets are used if the player chose a different berry (set is selected by player's berry % 5)
     {ITEM_TO_BERRY(ITEM_CHERI_BERRY) - 1,  ITEM_TO_BERRY(ITEM_PECHA_BERRY) - 1,  ITEM_TO_BERRY(ITEM_RAWST_BERRY) - 1},   // player chose Leppa, Figy, ...
     {ITEM_TO_BERRY(ITEM_CHESTO_BERRY) - 1, ITEM_TO_BERRY(ITEM_RAWST_BERRY) - 1,  ITEM_TO_BERRY(ITEM_ASPEAR_BERRY) - 1},  // player chose Oran, Wiki, ...
@@ -885,14 +884,14 @@ static const u8 sOpponentBerrySets[NUM_NPC_BERRIES * 2][3] =
 // Berry master's berries follow the same rules as above, but instead of explicitly listing
 // the alternate sets if the player chooses one of these berries, it implicitly uses these berries - 5, i.e. Tamato - Nomel
 static const u8 sBerryMasterBerries[] = {
-    ITEM_TO_BERRY(ITEM_SPELON_BERRY) - 1, 
-    ITEM_TO_BERRY(ITEM_PAMTRE_BERRY) - 1, 
-    ITEM_TO_BERRY(ITEM_WATMEL_BERRY) - 1, 
-    ITEM_TO_BERRY(ITEM_DURIN_BERRY) - 1, 
+    ITEM_TO_BERRY(ITEM_SPELON_BERRY) - 1,
+    ITEM_TO_BERRY(ITEM_PAMTRE_BERRY) - 1,
+    ITEM_TO_BERRY(ITEM_WATMEL_BERRY) - 1,
+    ITEM_TO_BERRY(ITEM_DURIN_BERRY) - 1,
     ITEM_TO_BERRY(ITEM_BELUE_BERRY) - 1
 };
 
-// "0 players" is link 
+// "0 players" is link
 static const u8 sNumPlayersToSpeedDivisor[] = {1, 1, 2, 3, 4};
 
 // Black pokeblocks will use one of these random combinations of flavors
@@ -1157,8 +1156,8 @@ static void SpriteCB_Berry(struct Sprite* sprite)
         else
             PlaySE(SE_BALL_TRAY_EXIT);
     }
-    sprite->pos1.x = sprite->sX;
-    sprite->pos1.y = sprite->sY;
+    sprite->x = sprite->sX;
+    sprite->y = sprite->sY;
 }
 
 static void SetBerrySpriteData(struct Sprite* sprite, s16 x, s16 y, s16 bounceSpeed, s16 xSpeed, s16 ySpeed)
@@ -1186,11 +1185,11 @@ static void SetBerrySpriteData(struct Sprite* sprite, s16 x, s16 y, s16 bounceSp
 static void CreateBerrySprite(u16 a0, u8 playerId)
 {
     u8 spriteId = CreateSpinningBerrySprite(a0 + FIRST_BERRY_INDEX - 10, 0, 80, playerId & 1);
-    SetBerrySpriteData(&gSprites[spriteId], 
-                        sBerrySpriteData[playerId][0], 
-                        sBerrySpriteData[playerId][1], 
-                        sBerrySpriteData[playerId][2], 
-                        sBerrySpriteData[playerId][3], 
+    SetBerrySpriteData(&gSprites[spriteId],
+                        sBerrySpriteData[playerId][0],
+                        sBerrySpriteData[playerId][1],
+                        sBerrySpriteData[playerId][2],
+                        sBerrySpriteData[playerId][3],
                         sBerrySpriteData[playerId][4]);
 }
 
@@ -1416,7 +1415,7 @@ static void CB2_StartBlenderLink(void)
         sBerryBlender->centerScale += 4;
         if (sBerryBlender->centerScale > 255)
         {
-            SetGpuRegBits(REG_OFFSET_BG2CNT, 2);
+            SetGpuRegBits(REG_OFFSET_BG2CNT, BGCNT_PRIORITY(2));
             sBerryBlender->mainState++;
             sBerryBlender->centerScale = 256;
             sBerryBlender->arrowPos = sArrowStartPos[sArrowStartPosIds[sBerryBlender->numPlayers - 2]];
@@ -1715,7 +1714,7 @@ static void CB2_StartBlenderLocal(void)
             sBerryBlender->mainState++;
             sBerryBlender->centerScale = 256;
             sBerryBlender->arrowPos = sArrowStartPos[sArrowStartPosIds[sBerryBlender->numPlayers - 2]];
-            SetGpuRegBits(REG_OFFSET_BG2CNT, 2);
+            SetGpuRegBits(REG_OFFSET_BG2CNT, BGCNT_PRIORITY(2));
             sBerryBlender->framesToWait = 0;
             PlaySE(SE_TRUCK_DOOR);
             PrintPlayerNames();
@@ -2054,7 +2053,7 @@ static void UpdateSpeedFromHit(u16 cmd)
 }
 
 // Return TRUE if the received command matches the corresponding Link or RFU command
-static bool32 CheckRecvCmdMatches(u16 recvCmd, u16 linkCmd, u16 rfuCmd)
+static bool32 CheckRecvCmdMatches(u16 recvCmd, u16 linkCmd)
 {
     return (recvCmd == linkCmd);
 }
@@ -2083,7 +2082,7 @@ static void UpdateOpponentScores(void)
     }
     for (i = 0; i < sBerryBlender->numPlayers; i++)
     {
-        if (CheckRecvCmdMatches(gRecvCmds[i][BLENDER_COMM_INPUT_STATE], LINKCMD_BLENDER_SEND_KEYS, RFUCMD_BLENDER_SEND_KEYS))
+        if (CheckRecvCmdMatches(gRecvCmds[i][BLENDER_COMM_INPUT_STATE], LINKCMD_BLENDER_SEND_KEYS))
         {
             u32 arrowId = sBerryBlender->playerIdToArrowId[i];
             if (gRecvCmds[i][BLENDER_COMM_SCORE] == LINKCMD_BLENDER_SCORE_BEST)
@@ -2113,12 +2112,12 @@ static void UpdateOpponentScores(void)
             // BUG: Should be [i][BLENDER_COMM_SCORE] below, not [BLENDER_COMM_SCORE][i]
             // As a result the music tempo updates if any player misses, but only if 1 specific player hits
             #ifdef BUGFIX
-            if (gRecvCmds[i][BLENDER_COMM_SCORE] == LINKCMD_BLENDER_SCORE_MISS 
-             || gRecvCmds[i][BLENDER_COMM_SCORE] == LINKCMD_BLENDER_SCORE_BEST 
+            if (gRecvCmds[i][BLENDER_COMM_SCORE] == LINKCMD_BLENDER_SCORE_MISS
+             || gRecvCmds[i][BLENDER_COMM_SCORE] == LINKCMD_BLENDER_SCORE_BEST
              || gRecvCmds[i][BLENDER_COMM_SCORE] == LINKCMD_BLENDER_SCORE_GOOD)
             #else
-            if (gRecvCmds[i][BLENDER_COMM_SCORE] == LINKCMD_BLENDER_SCORE_MISS 
-             || gRecvCmds[BLENDER_COMM_SCORE][i] == LINKCMD_BLENDER_SCORE_BEST 
+            if (gRecvCmds[i][BLENDER_COMM_SCORE] == LINKCMD_BLENDER_SCORE_MISS
+             || gRecvCmds[BLENDER_COMM_SCORE][i] == LINKCMD_BLENDER_SCORE_BEST
              || gRecvCmds[BLENDER_COMM_SCORE][i] == LINKCMD_BLENDER_SCORE_GOOD)
             #endif
             {
@@ -2182,7 +2181,7 @@ static void HandlePlayerInput(void)
             sBerryBlender->speed--;
         sBerryBlender->slowdownTimer = 0;
     }
-    
+
     if (gEnableContestDebugging && JOY_NEW(L_BUTTON))
         sBerryBlender->perfectOpponents ^= 1;
 }
@@ -2943,7 +2942,7 @@ static void ProcessLinkPlayerCmds(void)
 {
     if (gReceivedRemoteLinkPlayers)
     {
-        if (CheckRecvCmdMatches(gRecvCmds[0][BLENDER_COMM_INPUT_STATE], LINKCMD_SEND_PACKET, RFUCMD_SEND_PACKET))
+        if (CheckRecvCmdMatches(gRecvCmds[0][BLENDER_COMM_INPUT_STATE], LINKCMD_SEND_PACKET))
         {
             if (gRecvCmds[0][BLENDER_COMM_RESP] == LINKCMD_BLENDER_STOP)
             {
@@ -2972,10 +2971,10 @@ static void ProcessLinkPlayerCmds(void)
                 sBerryBlender->playerContinueResponses[0] = LINKCMD_SEND_LINK_TYPE;
             }
         }
-        
+
         // If player is link leader, check for responses to the "Continue playing" prompt (even if it's not up yet)
-        if (GetMultiplayerId() == 0 
-            && sBerryBlender->playerContinueResponses[0] != LINKCMD_BLENDER_STOP 
+        if (GetMultiplayerId() == 0
+            && sBerryBlender->playerContinueResponses[0] != LINKCMD_BLENDER_STOP
             && sBerryBlender->playerContinueResponses[0] != LINKCMD_SEND_LINK_TYPE)
         {
             u8 i;
@@ -2983,7 +2982,7 @@ static void ProcessLinkPlayerCmds(void)
             // Try to gather responses
             for (i = 0; i < GetLinkPlayerCount(); i++)
             {
-                if (CheckRecvCmdMatches(gRecvCmds[i][BLENDER_COMM_INPUT_STATE], LINKCMD_SEND_PACKET, RFUCMD_SEND_PACKET))
+                if (CheckRecvCmdMatches(gRecvCmds[i][BLENDER_COMM_INPUT_STATE], LINKCMD_SEND_PACKET))
                 {
                     switch (gRecvCmds[i][BLENDER_COMM_RESP])
                     {
@@ -3083,8 +3082,8 @@ static void SpriteCB_Particle(struct Sprite* sprite)
 {
     sprite->data[2] += sprite->data[0];
     sprite->data[3] += sprite->data[1];
-    sprite->pos2.x = sprite->data[2] / 8;
-    sprite->pos2.y = sprite->data[3] / 8;
+    sprite->x2 = sprite->data[2] / 8;
+    sprite->y2 = sprite->data[3] / 8;
 
     if (sprite->animEnded)
         DestroySprite(sprite);
@@ -3117,7 +3116,7 @@ static void CreateParticleSprites(void)
 static void SpriteCB_ScoreSymbol(struct Sprite* sprite)
 {
     sprite->data[0]++;
-    sprite->pos2.y = -(sprite->data[0] / 3);
+    sprite->y2 = -(sprite->data[0] / 3);
 
     if (sprite->animEnded)
         DestroySprite(sprite);
@@ -3126,10 +3125,10 @@ static void SpriteCB_ScoreSymbol(struct Sprite* sprite)
 static void SpriteCB_ScoreSymbolBest(struct Sprite* sprite)
 {
     sprite->data[0]++;
-    sprite->pos2.y = -(sprite->data[0] * 2);
+    sprite->y2 = -(sprite->data[0] * 2);
 
-    if (sprite->pos2.y < -12)
-        sprite->pos2.y = -12;
+    if (sprite->y2 < -12)
+        sprite->y2 = -12;
     if (sprite->animEnded)
         DestroySprite(sprite);
 }
@@ -3184,7 +3183,7 @@ static void SpriteCB_CountdownNumber(struct Sprite* sprite)
         break;
     }
 
-    sprite->pos2.y = sprite->sYPos;
+    sprite->y2 = sprite->sYPos;
 }
 
 #undef sState
@@ -3220,7 +3219,7 @@ static void SpriteCB_Start(struct Sprite* sprite)
         break;
     }
 
-    sprite->pos2.y = sprite->data[1];
+    sprite->y2 = sprite->data[1];
 }
 
 static void TryUpdateProgressBar(u16 current, u16 limit)
@@ -3365,8 +3364,8 @@ static bool8 UpdateBlenderLandScreenShake(void)
 
 static void SpriteCB_PlayerArrow(struct Sprite* sprite)
 {
-   sprite->pos2.x = -(sBerryBlender->bg_X);
-   sprite->pos2.y = -(sBerryBlender->bg_Y);
+   sprite->x2 = -(sBerryBlender->bg_X);
+   sprite->y2 = -(sBerryBlender->bg_Y);
 }
 
 static void TryUpdateBerryBlenderRecord(void)

@@ -14,7 +14,6 @@
 #define NUM_FRONTIER_FACILITIES    7
 // VAR_FRONTIER_FACILITY is re-used for the below facilities as well
 #define FACILITY_LINK_CONTEST      7
-#define FACILITY_UNION_ROOM        8
 #define FACILITY_MULTI_OR_EREADER  9  // Direct Corner multi battles, multi battle with Steven, and e-Reader battles
 
 // Battle Frontier lvl modes.
@@ -77,6 +76,21 @@
 #define FRONTIER_MANIAC_FACILITY_COUNT        10
 
 #define FRONTIER_MANIAC_MESSAGE_COUNT 3
+
+// Frontier TV Show
+#define FRONTIER_SHOW_TOWER_SINGLES      1
+#define FRONTIER_SHOW_TOWER_DOUBLES      2
+#define FRONTIER_SHOW_TOWER_MULTIS       3
+#define FRONTIER_SHOW_TOWER_LINK_MULTIS  4
+#define FRONTIER_SHOW_DOME_SINGLES       5
+#define FRONTIER_SHOW_DOME_DOUBLES       6
+#define FRONTIER_SHOW_FACTORY_SINGLES    7
+#define FRONTIER_SHOW_FACTORY_DOUBLES    8
+#define FRONTIER_SHOW_PIKE               9
+#define FRONTIER_SHOW_ARENA              10
+#define FRONTIER_SHOW_PALACE_SINGLES     11
+#define FRONTIER_SHOW_PALACE_DOUBLES     12
+#define FRONTIER_SHOW_PYRAMID            13
 
 // Frontier Gambler
 #define FRONTIER_GAMBLER_WAITING     0

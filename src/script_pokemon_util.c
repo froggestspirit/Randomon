@@ -8,7 +8,6 @@
 #include "event_data.h"
 #include "international_string_util.h"
 #include "link.h"
-#include "link_rfu.h"
 #include "main.h"
 #include "menu.h"
 #include "overworld.h"
@@ -22,7 +21,6 @@
 #include "string_util.h"
 #include "tv.h"
 #include "constants/items.h"
-#include "constants/tv.h"
 #include "constants/battle_frontier.h"
 
 static void CB2_ReturnFromChooseHalfParty(void);

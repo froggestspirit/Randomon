@@ -75,7 +75,7 @@
 #define LINKCMD_SEND_BLOCK_REQ          0xCCCC
 #define LINKCMD_START_TRADE             0xCCDD
 #define LINKCMD_CONFIRM_FINISH_TRADE    0xDCBA
-#define LINKCMD_SET_MONS_TO_TRADE       0xDDDD 
+#define LINKCMD_SET_MONS_TO_TRADE       0xDDDD
 #define LINKCMD_PLAYER_CANCEL_TRADE     0xDDEE
 #define LINKCMD_REQUEST_CANCEL          0xEEAA
 #define LINKCMD_BOTH_CANCEL_TRADE       0xEEBB
@@ -92,7 +92,7 @@
 #define LINKTYPE_DOUBLE_BATTLE         0x2244
 #define LINKTYPE_MULTI_BATTLE          0x2255
 #define LINKTYPE_BATTLE_TOWER_50       0x2266
-#define LINKTYPE_BATTLE_TOWER_OPEN     0x2277 
+#define LINKTYPE_BATTLE_TOWER_OPEN     0x2277
 #define LINKTYPE_BATTLE_TOWER          0x2288
 #define LINKTYPE_RECORD_MIX_BEFORE     0x3311
 #define LINKTYPE_RECORD_MIX_AFTER      0x3322
@@ -277,7 +277,6 @@ u32 LinkMain1(u8 *shouldAdvanceLinkState, u16 *sendCmd, u16 (*recvCmds)[CMD_LENG
 void LinkVSync(void);
 void Timer3Intr(void);
 void SerialCB(void);
-bool32 InUnionRoom(void);
 void LoadWirelessStatusIndicatorSpriteGfx(void);
 bool8 IsLinkTaskFinished(void);
 void CreateWirelessStatusIndicatorSprite(u8, u8);
@@ -321,7 +320,7 @@ extern bool8 gSavedLinkPlayerCount;
 extern u8 gSavedMultiplayerId;
 extern struct LinkTestBGInfo gLinkTestBGInfo;
 extern void (*gLinkCallback)(void);
-extern bool8 gShouldAdvanceLinkState;
+extern u8 gShouldAdvanceLinkState;
 extern u16 gLinkTestBlockChecksums[MAX_LINK_PLAYERS];
 extern u8 gBlockRequestType;
 extern u8 gLastSendQueueCount;

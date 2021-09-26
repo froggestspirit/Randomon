@@ -1,6 +1,6 @@
 	.align 2
 
-gSongTable:: @ 86B49F0
+gSongTable::
 	song mus_dummy, 0, 0
 	song se_use_item, 1, 1
 	song se_pc_login, 1, 1
@@ -486,7 +486,7 @@ gSongTable:: @ 86B49F0
 	song mus_rg_caught_intro, 2, 2
 	song mus_rg_caught, 0, 0
 	song mus_rg_poke_jump, 0, 0
-	song mus_rg_union_room, 0, 0
+	song mus_rg_vs_legend, 0, 0
 	song mus_rg_mystery_gift, 0, 0
 	song mus_rg_berry_pick, 0, 0
 	song mus_rg_sevii_cave, 0, 0
@@ -501,5 +501,5 @@ gSongTable:: @ 86B49F0
 	song mus_rg_vs_trainer, 0, 0
 
 	.align 2
-dummy_song_header: @ 86B5D00
+dummy_song_header:
 	.byte 0, 0, 0, 0
