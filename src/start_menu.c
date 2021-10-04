@@ -30,6 +30,7 @@
 #include "poke_radar.h"
 #include "pokedex.h"
 #include "pokenav.h"
+#include "random_map.h"
 #include "safari_zone.h"
 #include "save.h"
 #include "scanline_effect.h"
@@ -45,6 +46,10 @@
 #include "window.h"
 #include "constants/songs.h"
 #include "constants/rgb.h"
+
+extern u8 gRandomMapData[];
+extern u8 mapWidth;
+extern u8 mapHeight;
 
 // Menu actions
 enum
@@ -589,6 +594,18 @@ void ShowStartMenu(void)
 
 static bool8 HandleStartMenuInput(void)
 {
+    u8 x, y;
+    u16 *tilePointer = 0x0600F800;
+    if (JOY_NEW(B_BUTTON))
+    {
+        RandomMap(0x0003, 0x0F, FALSE);
+        for(y = 0; y < mapHeight; y++){
+            u16 yOff = y * mapWidth;
+            for(x = 0; x < mapWidth; x++){
+                tilePointer[(y << 5) + x] = gRandomMapData[yOff + x] + 0x213;
+            }
+        }
+    }
     if (JOY_NEW(DPAD_UP))
     {
         PlaySE(SE_SELECT);
@@ -623,7 +640,7 @@ static bool8 HandleStartMenuInput(void)
         return FALSE;
     }
 
-    if (JOY_NEW(START_BUTTON | B_BUTTON))
+    if (JOY_NEW(START_BUTTON))
     {
         RemoveExtraStartMenuWindows();
         HideStartMenu();

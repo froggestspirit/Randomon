@@ -1,29 +1,12 @@
 #include "global.h"
-#include "battle_pyramid.h"
-#include "bg.h"
-#include "day_night.h"
 #include "fieldmap.h"
-#include "fldeff.h"
-#include "fldeff_misc.h"
-#include "frontier_util.h"
-#include "menu.h"
-#include "mirage_tower.h"
 #include "overworld.h"
-#include "palette.h"
-#include "pokenav.h"
 #include "random_map.h"
-#include "script.h"
-#include "secret_base.h"
-#include "trainer_hill.h"
-#include "tv.h"
-#include "wild_encounter.h"
-#include "constants/rgb.h"
-#include "constants/metatile_behaviors.h"
 
 u32 gCurrentSeed;
 u8 mapWidth, mapHeight;
 bool8 badMap;
-u8 gRandomMapData[MAX_MAP_DATA_SIZE >> 5];
+u8 gRandomMapData[MAX_DIM * (MAX_DIM >> 1)];
 struct Point{
     s8 x;
     s8 y;
@@ -40,7 +23,7 @@ struct ConnectionFlags
     u8 east:1;
 };
 
-static const u16 randMapBlock[16 * NUM_BLOCKS] = {
+const u16 randMapBlock[16 * NUM_BLOCKS] = {
 EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE,
 EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE,
 EMPTY_TILE, EMPTY_TILE, EMPTY_TILE, EMPTY_TILE,
@@ -73,7 +56,7 @@ PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE
 };
 
 
-u16 rand(int a, int b){  // Psuedo Random number generator, using the same formula as the Gen 3/4 games
+u16 map_rand(int a, int b){  // Psuedo Random number generator, using the same formula as the Gen 3/4 games
     gCurrentSeed = ((0x41C64E6D * gCurrentSeed) + 0x00006073) & 0xFFFFFFFF;
     if(a > b)
         return ((gCurrentSeed >> 16) % ((a - b) + 1)) + b;
@@ -169,7 +152,7 @@ void process_path(u8 dir, struct Point *point, struct Point *destPoint){  // Han
     while(point->x != destPoint->x || point->y != destPoint->y){
         if(!dir){  // x
             if(abs(destPoint->x - point->x) > PATH_LINEARITY)
-                len = rand(PATH_LINEARITY, abs(destPoint->x - point->x));
+                len = map_rand(PATH_LINEARITY, abs(destPoint->x - point->x));
             else
                 len = abs(destPoint->x - point->x);
             if(len){
@@ -184,7 +167,7 @@ void process_path(u8 dir, struct Point *point, struct Point *destPoint){  // Han
             }
         }else{  // y
             if(abs(destPoint->y - point->y) > PATH_LINEARITY)
-                len = rand(PATH_LINEARITY, abs(destPoint->y - point->y));
+                len = map_rand(PATH_LINEARITY, abs(destPoint->y - point->y));
             else
                 len = abs(destPoint->y - point->y);
             if(len){
@@ -207,9 +190,9 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
     u8 x, y;
     u16 size;
     u32 retSeed;
-    static u8 exitPos[4];
-    static u8 exitSize[4];
-    static u8 mapDim[4];
+    u8 exitPos[4];
+    u8 exitSize[4];
+    u8 mapDim[4];
     gCurrentSeed = seed;
     badMap = TRUE;
     while(badMap){
@@ -217,8 +200,8 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
         badMap = FALSE;
         // Maps are built in blocks first that represent 4x4 tiles
         // Map size
-        mapWidth = rand(8,30);
-        mapHeight = rand(8,30);
+        mapWidth = map_rand(8,30);
+        mapHeight = map_rand(8,30);
         size = ((mapWidth * 4) + 15) * ((mapHeight * 4) + 14);
         // Enforce maximum size (In-game RAM limit)
         while(size >= MAX_MAP_DATA_SIZE){
@@ -232,8 +215,8 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
         mapDim[1] = mapDim[3] = mapHeight;
         for(i = 0; i < 4; i++){
             if(mapType & (1 << i)){
-                exitPos[i] = rand(MARGIN_SIZE, (mapDim[i] - 1) - MARGIN_SIZE);
-                exitSize[i] = rand(1, 4);
+                exitPos[i] = map_rand(MARGIN_SIZE, (mapDim[i] - 1) - MARGIN_SIZE);
+                exitSize[i] = map_rand(1, 4);
                 if(exitPos[i] + exitSize[i] >= mapDim[i] - MARGIN_SIZE)
                     exitPos[i] -= (exitPos[i] + exitSize[i]) - (mapDim[i] - MARGIN_SIZE);
             }
@@ -296,11 +279,11 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
         }
         // Set focal points for the path
         // Create one near each exit, and one near the center
-        static struct Point *pathPointCenter;
-        static struct Point *xyAvg;
-        static struct Point *pathPoint[10]; 
-        static u8 firstDir[10];
-        static u8 points = 0;
+        struct Point *pathPointCenter;
+        struct Point *xyAvg;
+        struct Point *pathPoint[10]; 
+        u8 firstDir[10];
+        u8 points = 0;
         pathPointCenter->x = mapWidth >> 1;
         pathPointCenter->y = mapHeight >> 1;
         xyAvg->x = 0;
@@ -360,7 +343,7 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
         struct Point *entityPos[NUM_ENTITY];
 
         // Draw the path with the path points
-        for(i = 0; i < points; i++)
+        /*for(i = 0; i < points; i++)
             process_path(firstDir[i], pathPoint[i], pathPointCenter);
         gRandomMapData[(pathPointCenter->y * mapWidth) + pathPointCenter->x] = 2;
 
@@ -376,8 +359,8 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
                     badMap = TRUE;
                 }else{
                     rerolls++;
-                    xy[0] = rand(MARGIN_SIZE, (mapWidth - 1) - MARGIN_SIZE);
-                    xy[1] = rand(MARGIN_SIZE, (mapHeight - 2) - MARGIN_SIZE);
+                    xy[0] = map_rand(MARGIN_SIZE, (mapWidth - 1) - MARGIN_SIZE);
+                    xy[1] = map_rand(MARGIN_SIZE, (mapHeight - 2) - MARGIN_SIZE);
                     if(xy[0] == pathPointCenter->x)
                         xy[0]++;
                     if(xy[1] == pathPointCenter->y)
@@ -396,14 +379,14 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
         for(i = 0; i < NUM_ENTITY; i++){
             entityPos[i]->y++;
             process_path(0, entityPos[i], pathPointCenter);
-        }
+        }*/
     }
 
-    gBackupMapLayout.width = (mapWidth << 2) + 15;
-    gBackupMapLayout.height = (mapHeight << 2) + 14;
+    //gBackupMapLayout.width = (mapWidth << 2) + 15;
+    //gBackupMapLayout.height = (mapHeight << 2) + 14;
 
     // Copy over actual tile data
-    u16 *tilePointer[16];
+    /*u16 *tilePointer[16];
     for(i = 0; i < 16; i++){
         tilePointer[i] = gBackupMapLayout.map;
         tilePointer[i] += gBackupMapLayout.width * 7 + 7;
@@ -421,6 +404,6 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
         }
         for(i = 0; i < 16; i++)
             tilePointer[i] += (3 * gBackupMapLayout.width) + 15;
-    }    
+    }*/
     return retSeed;
 }
