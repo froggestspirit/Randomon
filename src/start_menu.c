@@ -596,13 +596,21 @@ static bool8 HandleStartMenuInput(void)
 {
     u8 x, y;
     u16 *tilePointer = 0x0600F800;
+    u8 *pixelPointer = 0x0600C3A0;
+    static u32 thisSeed;
     if (JOY_NEW(B_BUTTON))
     {
-        RandomMap(0x0003, 0x0F, FALSE);
+        for(y = 0; y < 16; y++){
+            for(x = 0; x < 0x20; x++){
+                pixelPointer[(y << 5) + x] = y + (y << 4);
+            }
+        }
+
+        thisSeed = RandomMap(thisSeed, 0x0F, FALSE);
         for(y = 0; y < mapHeight; y++){
             u16 yOff = y * mapWidth;
             for(x = 0; x < mapWidth; x++){
-                tilePointer[(y << 5) + x] = gRandomMapData[yOff + x] + 0x213;
+                tilePointer[(y << 5) + x] = gRandomMapData[yOff + x] + 0xF21D;
             }
         }
     }

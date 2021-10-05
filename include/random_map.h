@@ -9,6 +9,7 @@
 #define PATH_TILE 0x305E
 
 #define MAX_DIM 30
+#define RAND_GEN_SIZE (MAX_DIM * (MAX_DIM >> 1))
 #define MARGIN_SIZE 2
 #define PATH_LINEARITY 4 // Paths will move a minimum of this number of tiles before turning (unless it's destination is closer)
 #define MAX_REROLLS 10

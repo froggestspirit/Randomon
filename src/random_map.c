@@ -3,10 +3,13 @@
 #include "overworld.h"
 #include "random_map.h"
 
+#define NUM_ENTITY 2
+
 u32 gCurrentSeed;
 u8 mapWidth, mapHeight;
+s8 testX, testY;
 bool8 badMap;
-u8 gRandomMapData[MAX_DIM * (MAX_DIM >> 1)];
+u8 gRandomMapData[RAND_GEN_SIZE];
 struct Point{
     s8 x;
     s8 y;
@@ -57,7 +60,7 @@ PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE
 
 
 u16 map_rand(int a, int b){  // Psuedo Random number generator, using the same formula as the Gen 3/4 games
-    gCurrentSeed = ((0x41C64E6D * gCurrentSeed) + 0x00006073) & 0xFFFFFFFF;
+    gCurrentSeed = ((0x41C64E6D * gCurrentSeed) + 0x00006073);
     if(a > b)
         return ((gCurrentSeed >> 16) % ((a - b) + 1)) + b;
     return ((gCurrentSeed >> 16) % ((b - a) + 1)) + a;
@@ -114,6 +117,7 @@ void fill_rect(u8 tile, u8 x, u8 y, u8 w, u8 h){  // Fill a rectangle with tile
 bool8 draw_line(u8 tile, u8 x1, u8 y1, u8 x2, u8 y2){  // Draw a line of tiles (this expects either a horizantal/vertical line, not diagonal)
     u8 count = 0;
     s8 inc[2];
+    inc[0] = inc[1] = 0;
     if(x1 < x2)
         inc[0] = 1;
     if(y1 < y2)
@@ -162,8 +166,10 @@ void process_path(u8 dir, struct Point *point, struct Point *destPoint){  // Han
                     len = -len;
                 xy2[0] += len;
                 point->x += len;
-                if(draw_line(2, xy[0], xy[1], xy2[0], xy2[1]))
-                    point = destPoint;
+                if(draw_line(2, xy[0], xy[1], xy2[0], xy2[1])){
+                    point->x = destPoint->x;
+                    point->y = destPoint->y;
+                }
             }
         }else{  // y
             if(abs(destPoint->y - point->y) > PATH_LINEARITY)
@@ -177,8 +183,10 @@ void process_path(u8 dir, struct Point *point, struct Point *destPoint){  // Han
                     len = -len;
                 xy2[1] += len;
                 point->y += len;
-                if(draw_line(2, xy[0], xy[1], xy2[0], xy2[1]))
-                    point = destPoint;
+                if(draw_line(2, xy[0], xy[1], xy2[0], xy2[1])){
+                    point->x = destPoint->x;
+                    point->y = destPoint->y;
+                }
             }
         }
         dir ^= 1;
@@ -193,6 +201,17 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
     u8 exitPos[4];
     u8 exitSize[4];
     u8 mapDim[4];
+    u8 firstDir[10];
+    u8 points = 0;
+    u16 yOff;
+    u8 locType;
+    u8 entity[NUM_ENTITY];
+    struct Point xyAvg;
+    struct Point pathPointCenter;
+
+    struct Point pathPoint[10]; 
+    struct Point entityPos[NUM_ENTITY];
+
     gCurrentSeed = seed;
     badMap = TRUE;
     while(badMap){
@@ -223,14 +242,14 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
         }
 
         // Create a bare map template
-        for(i = 0; i < MAX_MAP_DATA_SIZE >> 6; i++)
+        for(i = 0; i < RAND_GEN_SIZE; i++)
             gRandomMapData[i] = 0;
 
         for(y = 0; y < mapHeight; y++){
-            u16 yOff = y * mapWidth;
+            yOff = y * mapWidth;
             for(x = 0; x < mapWidth; x++){
                 // Get location type corners will be borders, margins may vary, center has no border
-                u8 locType = 0;
+                locType = 0;
                 if(y >= MARGIN_SIZE)
                     locType += 3;
                 if(y >= (mapHeight - MARGIN_SIZE))
@@ -279,96 +298,89 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
         }
         // Set focal points for the path
         // Create one near each exit, and one near the center
-        struct Point *pathPointCenter;
-        struct Point *xyAvg;
-        struct Point *pathPoint[10]; 
-        u8 firstDir[10];
-        u8 points = 0;
-        pathPointCenter->x = mapWidth >> 1;
-        pathPointCenter->y = mapHeight >> 1;
-        xyAvg->x = 0;
-        xyAvg->y = 0;
+        pathPointCenter.x = mapWidth >> 1;
+        pathPointCenter.y = mapHeight >> 1;
+        xyAvg.x = 0;
+        xyAvg.y = 0;
 
-        if(exitPos[0] > 0){
-            pathPoint[points]->x = exitPos[0] + (exitSize[0] >> 1);
-            pathPoint[points]->y = MARGIN_SIZE;
+        if(mapType & 1){
+            pathPoint[points].x = exitPos[0] + (exitSize[0] >> 1);
+            pathPoint[points].y = MARGIN_SIZE;
             firstDir[points] = 1;
-            xyAvg->x -= pathPoint[points]->x;
-            xyAvg->y -= pathPoint[points]->y;
+            xyAvg.x -= pathPoint[points].x;
+            xyAvg.y -= pathPoint[points].y;
             points++;
+            testX = xyAvg.x;
         }
-        if(exitPos[1] > 0){
-            pathPoint[points]->x = MARGIN_SIZE;
-            pathPoint[points]->y = exitPos[1] + (exitSize[1] >> 1);
+        testY = xyAvg.y;
+        if(mapType & 2){
+            pathPoint[points].x = MARGIN_SIZE;
+            pathPoint[points].y = exitPos[1] + (exitSize[1] >> 1);
             firstDir[points] = 0;
-            xyAvg->x -= pathPoint[points]->x;
-            xyAvg->y -= pathPoint[points]->y;
+            xyAvg.x -= pathPoint[points].x;
+            xyAvg.y -= pathPoint[points].y;
             points++;
         }
-        if(exitPos[2] > 0){
-            pathPoint[points]->x = exitPos[2] + (exitSize[2] >> 1);
-            pathPoint[points]->y = mapHeight - (MARGIN_SIZE + 1);
+        if(mapType & 4){
+            pathPoint[points].x = exitPos[2] + (exitSize[2] >> 1);
+            pathPoint[points].y = mapHeight - (MARGIN_SIZE + 1);
             firstDir[points] = 1;
-            xyAvg->x -= pathPoint[points]->x;
-            xyAvg->y -= pathPoint[points]->y;
+            xyAvg.x -= pathPoint[points].x;
+            xyAvg.y -= pathPoint[points].y;
             points++;
         }
-        if(exitPos[3] > 0){
-            pathPoint[points]->x = mapWidth - (MARGIN_SIZE + 1);
-            pathPoint[points]->y = exitPos[3] + (exitSize[3] >> 1);
+        if(mapType & 8){
+            pathPoint[points].x = mapWidth - (MARGIN_SIZE + 1);
+            pathPoint[points].y = exitPos[3] + (exitSize[3] >> 1);
             firstDir[points] = 0;
-            xyAvg->x -= pathPoint[points]->x;
-            xyAvg->y -= pathPoint[points]->y;
+            xyAvg.x -= pathPoint[points].x;
+            xyAvg.y -= pathPoint[points].y;
             points++;
         }
-
         // Adjust the center point so there's less blank space
         if(points){
-            xyAvg->x /= points;
-            xyAvg->y /= points;
-            xyAvg->x--;
-            xyAvg->y--;
-            if(xyAvg->x < MARGIN_SIZE)
-                xyAvg->x += mapWidth;
-            if(xyAvg->y < MARGIN_SIZE)
-                xyAvg->y += mapHeight;
+            xyAvg.x /= points;
+            xyAvg.y /= points;
+            xyAvg.x--;
+            xyAvg.y--;
+            if(xyAvg.x < MARGIN_SIZE)
+                xyAvg.x += mapWidth;
+            if(xyAvg.y < MARGIN_SIZE)
+                xyAvg.y += mapHeight;
             pathPointCenter = xyAvg;
         }
 
         // Create buildings or entities that should spawn a path point
-        #define NUM_ENTITY 2
-        u8 entity[NUM_ENTITY];
         entity[0] = 4;  // Pokemon Center
         entity[1] = 5;  // Mart
-        struct Point *entityPos[NUM_ENTITY];
 
         // Draw the path with the path points
-        /*for(i = 0; i < points; i++)
-            process_path(firstDir[i], pathPoint[i], pathPointCenter);
-        gRandomMapData[(pathPointCenter->y * mapWidth) + pathPointCenter->x] = 2;
+        for(i = 0; i < points; i++)
+            process_path(firstDir[i], &pathPoint[i], &pathPointCenter);
+        gRandomMapData[(pathPointCenter.y * mapWidth) + pathPointCenter.x] = 2;
 
         // Find space for the entities
         for(i = 0; i < NUM_ENTITY; i++){
-            entityPos[i]->x = entityPos[i]->y = 0;
+            entityPos[i].x = entityPos[i].y = 0;
             s8 xy[2];
             xy[0] = xy[1] = 0;
             u8 rerolls = 0;
-            while(entityPos[i]->x == 0 && entityPos[i]->y == 0){
+            while(entityPos[i].x == 0 && entityPos[i].y == 0){
                 if(rerolls > MAX_REROLLS){ // Too many re-rolls, abort
-                    entityPos[i]->x = entityPos[i]->y = 1;
+                    entityPos[i].x = entityPos[i].y = 1;
                     badMap = TRUE;
                 }else{
                     rerolls++;
                     xy[0] = map_rand(MARGIN_SIZE, (mapWidth - 1) - MARGIN_SIZE);
                     xy[1] = map_rand(MARGIN_SIZE, (mapHeight - 2) - MARGIN_SIZE);
-                    if(xy[0] == pathPointCenter->x)
+                    if(xy[0] == pathPointCenter.x)
                         xy[0]++;
-                    if(xy[1] == pathPointCenter->y)
+                    if(xy[1] == pathPointCenter.y)
                         xy[1]++;
                     if(check_rect(0, xy[0], xy[1] - 1, 1, 2)){ // Make sure the area the entity is placed is clear, and the tile above it
                         if(check_rect(2, xy[0], xy[1] + 1, 1, 1)){ // Do a separate check for the tile below the entity, alowing paths, since they are good to lead up to buildings
-                            entityPos[i]->x = xy[0];
-                            entityPos[i]->y = xy[1];
+                            entityPos[i].x = xy[0];
+                            entityPos[i].y = xy[1];
                             gRandomMapData[(xy[1] * mapWidth) + xy[0]] = entity[i];
                         }
                     }
@@ -377,9 +389,9 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
         }
         // Create paths for the entities
         for(i = 0; i < NUM_ENTITY; i++){
-            entityPos[i]->y++;
-            process_path(0, entityPos[i], pathPointCenter);
-        }*/
+            entityPos[i].y++;
+            process_path(0, &entityPos[i], &pathPointCenter);
+        }
     }
 
     //gBackupMapLayout.width = (mapWidth << 2) + 15;
