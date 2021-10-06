@@ -1,13 +1,15 @@
 #include "global.h"
 #include "fieldmap.h"
 #include "overworld.h"
+#include "random.h"
 #include "random_map.h"
 
 #define NUM_ENTITY 2
 
 u32 gCurrentSeed;
 u8 mapWidth, mapHeight;
-s8 testX, testY;
+u16 testX, testY, testX2, testY2;
+u32 test[10];
 bool8 badMap;
 u8 gRandomMapData[RAND_GEN_SIZE];
 struct Point{
@@ -59,11 +61,9 @@ PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE
 };
 
 
-u16 map_rand(int a, int b){  // Psuedo Random number generator, using the same formula as the Gen 3/4 games
-    gCurrentSeed = ((0x41C64E6D * gCurrentSeed) + 0x00006073);
-    if(a > b)
-        return ((gCurrentSeed >> 16) % ((a - b) + 1)) + b;
-    return ((gCurrentSeed >> 16) % ((b - a) + 1)) + a;
+u8 map_rand(u8 min, u8 max){  // Psuedo Random number generator, using the same formula as the Gen 3/4 games
+    gCurrentSeed = ISO_RANDOMIZE1(gCurrentSeed);
+    return ((gCurrentSeed >> 16) % ((max - min) + 1)) + min;
 }
 
 bool8 check_rect(u8 tile, u8 x, u8 y, u8 w, u8 h){  // Check if a rectangle is free of tiles that are not tile, or 0
@@ -108,8 +108,7 @@ void fill_rect(u8 tile, u8 x, u8 y, u8 w, u8 h){  // Fill a rectangle with tile
         u16 yOff = yCoord * mapWidth;
         for(xi = 0; xi < w; xi++){
             xCoord = x + xi;
-            if(!gRandomMapData[yOff + xCoord])
-                gRandomMapData[yOff + xCoord] = tile;
+            if(!gRandomMapData[yOff + xCoord]) gRandomMapData[yOff + xCoord] = tile;
         }
     }
 }
@@ -118,34 +117,26 @@ bool8 draw_line(u8 tile, u8 x1, u8 y1, u8 x2, u8 y2){  // Draw a line of tiles (
     u8 count = 0;
     s8 inc[2];
     inc[0] = inc[1] = 0;
-    if(x1 < x2)
-        inc[0] = 1;
-    if(y1 < y2)
-        inc[1] = 1;
-    if(x1 > x2)
-        inc[0] = -1;
-    if(y1 > y2)
-        inc[1] = -1;
+    if(x1 < x2) inc[0] = 1;
+    if(y1 < y2) inc[1] = 1;
+    if(x1 > x2) inc[0] = -1;
+    if(y1 > y2) inc[1] = -1;
     while(x1 != x2 || y1 != y2){
-        if(gRandomMapData[(y1 * mapWidth) + x1] == tile)
-            return TRUE;
+        if(gRandomMapData[(y1 * mapWidth) + x1] == tile) return TRUE;
         if(gRandomMapData[(y1 * mapWidth) + x1] >= 4){
             badMap = TRUE;
             return TRUE;
         }
         gRandomMapData[(y1 * mapWidth) + x1] = tile;
         if(count){
-            if(gRandomMapData[((y1 + inc[0]) * mapWidth) + (x1 + inc[1])] == tile)
-                return TRUE;
-            if(gRandomMapData[((y1 - inc[0]) * mapWidth) + (x1 - inc[1])] == tile)
-                return TRUE;
+            if(gRandomMapData[((y1 + inc[0]) * mapWidth) + (x1 + inc[1])] == tile) return TRUE;
+            if(gRandomMapData[((y1 - inc[0]) * mapWidth) + (x1 - inc[1])] == tile) return TRUE;
         }
         x1 += inc[0];
         y1 += inc[1];
         count++;
     }
-    if(gRandomMapData[(y1 * mapWidth) + x1] == tile)
-        return TRUE;
+    if(gRandomMapData[(y1 * mapWidth) + x1] == tile) return TRUE;
     return FALSE;
 }
 
@@ -153,17 +144,18 @@ void process_path(u8 dir, struct Point *point, struct Point *destPoint){  // Han
     s8 len;
     u8 xy[2];
     u8 xy2[2];
+    u8 tcount = 1;
     while(point->x != destPoint->x || point->y != destPoint->y){
         if(!dir){  // x
-            if(abs(destPoint->x - point->x) > PATH_LINEARITY)
+            if(abs(destPoint->x - point->x) > PATH_LINEARITY){
                 len = map_rand(PATH_LINEARITY, abs(destPoint->x - point->x));
-            else
+            }else{
                 len = abs(destPoint->x - point->x);
+            }
             if(len){
                 xy[0] = xy2[0] = point->x;
                 xy[1] = xy2[1] = point->y;
-                if(destPoint->x < point->x)
-                    len = -len;
+                if(destPoint->x < point->x) len = -len;
                 xy2[0] += len;
                 point->x += len;
                 if(draw_line(2, xy[0], xy[1], xy2[0], xy2[1])){
@@ -172,15 +164,15 @@ void process_path(u8 dir, struct Point *point, struct Point *destPoint){  // Han
                 }
             }
         }else{  // y
-            if(abs(destPoint->y - point->y) > PATH_LINEARITY)
+            if(abs(destPoint->y - point->y) > PATH_LINEARITY){
                 len = map_rand(PATH_LINEARITY, abs(destPoint->y - point->y));
-            else
+            }else{
                 len = abs(destPoint->y - point->y);
+            }
             if(len){
                 xy[0] = xy2[0] = point->x;
                 xy[1] = xy2[1] = point->y;
-                if(destPoint->y < point->y)
-                    len = -len;
+                if(destPoint->y < point->y) len = -len;
                 xy2[1] += len;
                 point->y += len;
                 if(draw_line(2, xy[0], xy[1], xy2[0], xy2[1])){
@@ -193,16 +185,15 @@ void process_path(u8 dir, struct Point *point, struct Point *destPoint){  // Han
     }
 }
 
-u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
+u32 RandomMap(u32 seed, u8 mapType, bool8 newGame){
     int i;
     u8 x, y;
-    u16 size;
-    u32 retSeed;
+    u32 size;
     u8 exitPos[4];
     u8 exitSize[4];
     u8 mapDim[4];
     u8 firstDir[10];
-    u8 points = 0;
+    u8 points;
     u16 yOff;
     u8 locType;
     u8 entity[NUM_ENTITY];
@@ -211,12 +202,15 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
 
     struct Point pathPoint[10]; 
     struct Point entityPos[NUM_ENTITY];
-
-    gCurrentSeed = seed;
+    u32 startSeed = seed - 1 ;
+    
     badMap = TRUE;
+    u8 tries = 0;
     while(badMap){
-        retSeed = gCurrentSeed;
+        gCurrentSeed = ++startSeed;
+        test[tries++] = gCurrentSeed;
         badMap = FALSE;
+        points = 0;
         // Maps are built in blocks first that represent 4x4 tiles
         // Map size
         mapWidth = map_rand(8,30);
@@ -224,10 +218,11 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
         size = ((mapWidth * 4) + 15) * ((mapHeight * 4) + 14);
         // Enforce maximum size (In-game RAM limit)
         while(size >= MAX_MAP_DATA_SIZE){
-            if(mapHeight >= mapWidth)
+            if(mapHeight >= mapWidth){
                 mapHeight--;
-            else
+            }else{
                 mapWidth--;
+            }
             size = ((mapWidth * 4) + 15) * ((mapHeight * 4) + 14);
         }
         mapDim[0] = mapDim[2] = mapWidth;
@@ -236,28 +231,24 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
             if(mapType & (1 << i)){
                 exitPos[i] = map_rand(MARGIN_SIZE, (mapDim[i] - 1) - MARGIN_SIZE);
                 exitSize[i] = map_rand(1, 4);
-                if(exitPos[i] + exitSize[i] >= mapDim[i] - MARGIN_SIZE)
+                if(exitPos[i] + exitSize[i] >= mapDim[i] - MARGIN_SIZE){
                     exitPos[i] -= (exitPos[i] + exitSize[i]) - (mapDim[i] - MARGIN_SIZE);
+                }
             }
         }
 
         // Create a bare map template
-        for(i = 0; i < RAND_GEN_SIZE; i++)
-            gRandomMapData[i] = 0;
+        for(i = 0; i < RAND_GEN_SIZE; i++) gRandomMapData[i] = 0;
 
         for(y = 0; y < mapHeight; y++){
             yOff = y * mapWidth;
             for(x = 0; x < mapWidth; x++){
                 // Get location type corners will be borders, margins may vary, center has no border
                 locType = 0;
-                if(y >= MARGIN_SIZE)
-                    locType += 3;
-                if(y >= (mapHeight - MARGIN_SIZE))
-                    locType += 3;
-                if(x >= MARGIN_SIZE)
-                    locType += 1;
-                if(x >= (mapWidth - MARGIN_SIZE))
-                    locType += 1;
+                if(y >= MARGIN_SIZE) locType += 3;
+                if(y >= (mapHeight - MARGIN_SIZE)) locType += 3;
+                if(x >= MARGIN_SIZE) locType += 1;
+                if(x >= (mapWidth - MARGIN_SIZE)) locType += 1;
 
                 switch(locType){
                     case 0:
@@ -270,28 +261,32 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
                         gRandomMapData[yOff + x] = 0;
                         break;
                     case 1:  // north
-                        if((x >= exitPos[0]) && (x < exitPos[0] + exitSize[0]))
+                        if((x >= exitPos[0]) && (x < exitPos[0] + exitSize[0])){
                             gRandomMapData[yOff + x] = 0;
-                        else
+                        }else{
                             gRandomMapData[yOff + x] = 1;
+                        }
                         break;
                     case 3:  // west
-                        if((y >= exitPos[1]) && (y < exitPos[1] + exitSize[1]))
+                        if((y >= exitPos[1]) && (y < exitPos[1] + exitSize[1])){
                             gRandomMapData[yOff + x] = 0;
-                        else
+                        }else{
                             gRandomMapData[yOff + x] = 1;
+                        }
                         break;
                     case 5:  // east
-                        if((y >= exitPos[3]) && (y < exitPos[3] + exitSize[3]))
+                        if((y >= exitPos[3]) && (y < exitPos[3] + exitSize[3])){
                             gRandomMapData[yOff + x] = 0;
-                        else
+                        }else{
                             gRandomMapData[yOff + x] = 1;
+                        }
                         break;
                     case 7:  // south
-                        if((x >= exitPos[2]) && (x < exitPos[2] + exitSize[2]))
+                        if((x >= exitPos[2]) && (x < exitPos[2] + exitSize[2])){
                             gRandomMapData[yOff + x] = 0;
-                        else
+                        }else{
                             gRandomMapData[yOff + x] = 1;
+                        }
                         break;
                 }
             }
@@ -310,9 +305,7 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
             xyAvg.x -= pathPoint[points].x;
             xyAvg.y -= pathPoint[points].y;
             points++;
-            testX = xyAvg.x;
         }
-        testY = xyAvg.y;
         if(mapType & 2){
             pathPoint[points].x = MARGIN_SIZE;
             pathPoint[points].y = exitPos[1] + (exitSize[1] >> 1);
@@ -343,10 +336,8 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
             xyAvg.y /= points;
             xyAvg.x--;
             xyAvg.y--;
-            if(xyAvg.x < MARGIN_SIZE)
-                xyAvg.x += mapWidth;
-            if(xyAvg.y < MARGIN_SIZE)
-                xyAvg.y += mapHeight;
+            if(xyAvg.x < MARGIN_SIZE) xyAvg.x += mapWidth;
+            if(xyAvg.y < MARGIN_SIZE) xyAvg.y += mapHeight;
             pathPointCenter = xyAvg;
         }
 
@@ -355,10 +346,14 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
         entity[1] = 5;  // Mart
 
         // Draw the path with the path points
-        for(i = 0; i < points; i++)
+        for(i = 0; i < points; i++){
             process_path(firstDir[i], &pathPoint[i], &pathPointCenter);
+        }
         gRandomMapData[(pathPointCenter.y * mapWidth) + pathPointCenter.x] = 2;
 
+        // Reroll if it's a bad map
+        if(badMap) continue;
+        
         // Find space for the entities
         for(i = 0; i < NUM_ENTITY; i++){
             entityPos[i].x = entityPos[i].y = 0;
@@ -373,10 +368,8 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
                     rerolls++;
                     xy[0] = map_rand(MARGIN_SIZE, (mapWidth - 1) - MARGIN_SIZE);
                     xy[1] = map_rand(MARGIN_SIZE, (mapHeight - 2) - MARGIN_SIZE);
-                    if(xy[0] == pathPointCenter.x)
-                        xy[0]++;
-                    if(xy[1] == pathPointCenter.y)
-                        xy[1]++;
+                    if(xy[0] == pathPointCenter.x) xy[0]++;
+                    if(xy[1] == pathPointCenter.y) xy[1]++;
                     if(check_rect(0, xy[0], xy[1] - 1, 1, 2)){ // Make sure the area the entity is placed is clear, and the tile above it
                         if(check_rect(2, xy[0], xy[1] + 1, 1, 1)){ // Do a separate check for the tile below the entity, alowing paths, since they are good to lead up to buildings
                             entityPos[i].x = xy[0];
@@ -387,11 +380,19 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
                 }
             }
         }
+
+        // Reroll if it's a bad map
+        if(badMap) continue;
+
         // Create paths for the entities
         for(i = 0; i < NUM_ENTITY; i++){
             entityPos[i].y++;
             process_path(0, &entityPos[i], &pathPointCenter);
         }
+
+        // Reroll if it's a bad map
+        if(badMap) continue;
+
     }
 
     //gBackupMapLayout.width = (mapWidth << 2) + 15;
@@ -417,5 +418,5 @@ u32 RandomMap(u16 seed, u8 mapType, bool8 newGame){
         for(i = 0; i < 16; i++)
             tilePointer[i] += (3 * gBackupMapLayout.width) + 15;
     }*/
-    return retSeed;
+    return startSeed;
 }

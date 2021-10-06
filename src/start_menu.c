@@ -50,6 +50,8 @@
 extern u8 gRandomMapData[];
 extern u8 mapWidth;
 extern u8 mapHeight;
+extern u32 gCurrentSeed;
+u32 thisSeed;
 
 // Menu actions
 enum
@@ -597,7 +599,6 @@ static bool8 HandleStartMenuInput(void)
     u8 x, y;
     u16 *tilePointer = 0x0600F800;
     u8 *pixelPointer = 0x0600C3A0;
-    static u32 thisSeed;
     if (JOY_NEW(B_BUTTON))
     {
         for(y = 0; y < 16; y++){
@@ -606,7 +607,7 @@ static bool8 HandleStartMenuInput(void)
             }
         }
 
-        thisSeed = RandomMap(thisSeed, 0x0F, FALSE);
+        thisSeed = RandomMap(gCurrentSeed, 0x0F, FALSE);
         for(y = 0; y < mapHeight; y++){
             u16 yOff = y * mapWidth;
             for(x = 0; x < mapWidth; x++){
