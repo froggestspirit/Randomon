@@ -20,6 +20,8 @@
 #include "constants/rgb.h"
 #include "constants/metatile_behaviors.h"
 
+extern u32 gCurrentSeed;
+
 struct ConnectionFlags
 {
     u8 south:1;
@@ -115,11 +117,12 @@ static void InitMapLayoutData(struct MapHeader *mapHeader)
     gBackupMapLayout.height = height;
     if (width * height <= MAX_MAP_DATA_SIZE)
     {
-        if (!JOY_HELD(SELECT_BUTTON))
+        if (!JOY_HELD(SELECT_BUTTON)){
             InitBackupMapLayoutData(mapLayout->map, mapLayout->width, mapLayout->height);
-        else
-            RandomMap(0x0000, 0x0F, FALSE);
-        InitBackupMapLayoutConnections(mapHeader);
+            InitBackupMapLayoutConnections(mapHeader);
+        }else{
+            RandomMap(gCurrentSeed, 0x0F, FALSE);
+        }
     }
 }
 

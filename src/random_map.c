@@ -3,15 +3,16 @@
 #include "overworld.h"
 #include "random.h"
 #include "random_map.h"
+#include "constants/maps.h"
 
-#define NUM_ENTITY 2
 
 u32 gCurrentSeed;
 u8 mapWidth, mapHeight;
-u16 testX, testY, testX2, testY2;
+u32 testX, testY, testX2, testY2;
 u32 test[10];
 bool8 badMap;
 u8 gRandomMapData[RAND_GEN_SIZE];
+struct WarpEvent randMapWarps[RAND_MAP_WARP_COUNT];
 struct Point{
     s8 x;
     s8 y;
@@ -49,15 +50,15 @@ PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE,
 PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE,
 PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE,
 
-PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE,
-PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE,
-PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE,
-PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE,
+0x3048, 0x3049, 0x304A, 0x304B,
+0x0450, 0x0451, 0x0452, 0x0453,
+0x0458, 0x0459, 0x045A, 0x045B,
+0x0460, 0x0461, 0x0462, 0x0463,
 
-PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE,
-PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE,
-PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE,
-PATH_TILE, PATH_TILE, PATH_TILE, PATH_TILE
+0x3028, 0x3029, 0x3029, 0x302B,
+0x0430, 0x0431, 0x0432, 0x0433,
+0x0438, 0x0439, 0x043A, 0x043B,
+0x0460, 0x0441, 0x0442, 0x0443
 };
 
 
@@ -207,6 +208,11 @@ u32 RandomMap(u32 seed, u8 mapType, bool8 newGame){
     badMap = TRUE;
     u8 tries = 0;
     while(badMap){
+        for(i = 0; i < RAND_MAP_WARP_COUNT; i++){  // Setting RAM warps to 0,0 should be sufficient
+            randMapWarps[i].x = 0;
+            randMapWarps[i].y = 0;
+        }
+
         gCurrentSeed = ++startSeed;
         test[tries++] = gCurrentSeed;
         badMap = FALSE;
@@ -379,6 +385,12 @@ u32 RandomMap(u32 seed, u8 mapType, bool8 newGame){
                     }
                 }
             }
+            randMapWarps[i].x = (entityPos[i].x << 2) + 1;
+            randMapWarps[i].y = (entityPos[i].y << 2) + 3;
+            randMapWarps[i].elevation = 0;
+            randMapWarps[i].warpId = i;
+            randMapWarps[i].mapNum = MAP_NUM(OLDALE_TOWN_POKEMON_CENTER_1F);
+            randMapWarps[i].mapGroup = MAP_GROUP(OLDALE_TOWN_POKEMON_CENTER_1F);
         }
 
         // Reroll if it's a bad map
@@ -395,11 +407,11 @@ u32 RandomMap(u32 seed, u8 mapType, bool8 newGame){
 
     }
 
-    //gBackupMapLayout.width = (mapWidth << 2) + 15;
-    //gBackupMapLayout.height = (mapHeight << 2) + 14;
-
+    gBackupMapLayout.width = (mapWidth << 2) + 15;
+    gBackupMapLayout.height = (mapHeight << 2) + 14;
+    
     // Copy over actual tile data
-    /*u16 *tilePointer[16];
+    u16 *tilePointer[16];
     for(i = 0; i < 16; i++){
         tilePointer[i] = gBackupMapLayout.map;
         tilePointer[i] += gBackupMapLayout.width * 7 + 7;
@@ -417,6 +429,6 @@ u32 RandomMap(u32 seed, u8 mapType, bool8 newGame){
         }
         for(i = 0; i < 16; i++)
             tilePointer[i] += (3 * gBackupMapLayout.width) + 15;
-    }*/
+    }
     return startSeed;
 }

@@ -15,6 +15,9 @@
 #define MAX_REROLLS 10
 #define NUM_BLOCKS 6
 
+#define NUM_ENTITY 2
+#define RAND_MAP_WARP_COUNT 5 
+
 u8 map_rand(u8, u8);
 bool8 check_rect(u8, u8, u8, u8, u8);
 void fill_rect(u8, u8, u8, u8, u8);

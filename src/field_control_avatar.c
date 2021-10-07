@@ -21,6 +21,7 @@
 #include "overworld.h"
 #include "poke_radar.h"
 #include "pokemon.h"
+#include "random_map.h"
 #include "safari_zone.h"
 #include "script.h"
 #include "secret_base.h"
@@ -38,6 +39,8 @@
 #include "constants/songs.h"
 #include "constants/trainer_hill.h"
 
+extern u32 testX, testY;
+extern struct WarpEvent *randMapWarps;
 static EWRAM_DATA u8 sWildEncounterImmunitySteps = 0;
 static EWRAM_DATA u16 sPreviousPlayerMetatileBehavior = 0;
 
@@ -798,6 +801,7 @@ static s8 GetWarpEventAtMapPosition(struct MapHeader *mapHeader, struct MapPosit
 static void SetupWarp(struct MapHeader *unused, s8 warpEventId, struct MapPosition *position)
 {
     const struct WarpEvent *warpEvent;
+    
 
     u8 trainerHillMapId = GetCurrentTrainerHillMapId();
 
@@ -816,12 +820,18 @@ static void SetupWarp(struct MapHeader *unused, s8 warpEventId, struct MapPositi
         }
         else
         {
-            warpEvent = &gMapHeader.events->warps[warpEventId];
+            if(warpEventId < 0x40)
+                warpEvent = &gMapHeader.events->warps[warpEventId];
+            else
+                warpEvent = &randMapWarps + ((warpEventId - 0x40) * 2);
         }
     }
     else
     {
-        warpEvent = &gMapHeader.events->warps[warpEventId];
+        if(warpEventId < 0x40)
+            warpEvent = &gMapHeader.events->warps[warpEventId];
+        else
+            warpEvent = &randMapWarps + ((warpEventId - 0x40) * 2);
     }
 
     if (warpEvent->mapNum == MAP_NUM(NONE))
@@ -830,13 +840,16 @@ static void SetupWarp(struct MapHeader *unused, s8 warpEventId, struct MapPositi
     }
     else
     {
+        testX = warpEvent;
+        testY = warpEventId;
         const struct MapHeader *mapHeader;
-
         SetWarpDestinationToMapWarp(warpEvent->mapGroup, warpEvent->mapNum, warpEvent->warpId);
         UpdateEscapeWarp(position->x, position->y);
         mapHeader = Overworld_GetMapHeaderByGroupAndId(warpEvent->mapGroup, warpEvent->mapNum);
-        if (mapHeader->events->warps[warpEvent->warpId].mapNum == MAP_NUM(NONE))
+        if (mapHeader->events->warps[warpEvent->warpId].mapNum == MAP_NUM(NONE) && warpEventId < 0x40)
             SetDynamicWarp(mapHeader->events->warps[warpEventId].warpId, gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum, warpEventId);
+        if (mapHeader->events->warps[warpEvent->warpId].mapNum == MAP_NUM(NONE) && warpEventId >= 0x40)
+            SetDynamicWarp(randMapWarps[warpEventId - 0x40].warpId, gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum, warpEventId - 0x40);
     }
 }
 
@@ -870,9 +883,17 @@ static bool8 TryDoorWarp(struct MapPosition *position, u16 metatileBehavior, u8 
 static s8 GetWarpEventAtPosition(struct MapHeader *mapHeader, u16 x, u16 y, u8 elevation)
 {
     s32 i;
+    struct WarpEvent *warpEventRAM = &randMapWarps;
+    for (i = 0; i < RAND_MAP_WARP_COUNT; i++, warpEventRAM++)
+    {
+        if ((u16)warpEventRAM->x == x && (u16)warpEventRAM->y == y)
+        {
+            return i + 0x40;
+        }
+    }
+
     struct WarpEvent *warpEvent = mapHeader->events->warps;
     u8 warpCount = mapHeader->events->warpCount;
-
     for (i = 0; i < warpCount; i++, warpEvent++)
     {
         if ((u16)warpEvent->x == x && (u16)warpEvent->y == y)
@@ -881,6 +902,7 @@ static s8 GetWarpEventAtPosition(struct MapHeader *mapHeader, u16 x, u16 y, u8 e
                 return i;
         }
     }
+
     return -1;
 }
 
