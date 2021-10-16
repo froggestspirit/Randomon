@@ -938,8 +938,8 @@ struct SaveBlock1
     /*0x3D5A*/ //u8 filler3D5A[0xA];
     /*0x3D64*/ struct SaveTrainerHill trainerHill;
     /*0x3D70*/ struct WaldaPhrase waldaPhrase;
-               u16 InitialSeed;
-               u16 MapSeed[40];
+               u32 InitialSeed;
+               u32 MapSeed[400];
                //struct PokeRadarChain gPokeRadarChain;
     // sizeof: 0x3D88
 };
