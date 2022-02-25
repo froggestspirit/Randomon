@@ -1,3 +1,5 @@
+This was an attempt at making a randomized pokemon game that is self-contained in the rom, and focuses on randomized maps. I didn't get that far, so don't expect much to work out of the box, but I am opening it for archival purposes.
+
 # Pokémon Emerald
 
 [![Build Status][travis-badge]][travis]
